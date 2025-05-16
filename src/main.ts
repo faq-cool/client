@@ -44,12 +44,18 @@ async function main(faqScript: FAQ) {
         height: number
     }
 
+    type Step =
+        | { type: 'say', text: string }
+        | { type: 'click', input: string }
+        | { type: 'fill', input: string, value: string }
+        | { type: 'select', input: string, value: string }
+
     interface Scene {
         image: string
         width: number
         height: number
         names: { [k: string]: Box | null }
-        // steps: Step[]
+        steps: Step[]
     }
 
     async function screenshot() {
@@ -65,21 +71,20 @@ async function main(faqScript: FAQ) {
         return img.toString('base64')
     }
 
-    type Step = SceneItem['scene'][0]
 
     interface Action {
         input: string
         value: string
     }
 
-    interface Visitor {
-        'say': (text: string) => Promise<void>
-        'fill': (actions: Action[]) => Promise<void>
-        'click': (input: string) => Promise<void>
-        'select': (action: Action) => Promise<void>
+    interface Visitor<T> {
+        'say': (text: string) => T
+        'fill': (actions: Action[]) => T
+        'click': (input: string) => T
+        'select': (action: Action) => T
     }
 
-    function visit(step: Step, visitor: Visitor) {
+    function visit<T>(step: SceneItem['scene'][0], visitor: Visitor<T>) {
         if ('say' in step) return visitor.say(step.say)
         if ('click' in step) return visitor.click(step.click)
         if ('fill' in step) return visitor.fill(step.fill)
@@ -87,15 +92,33 @@ async function main(faqScript: FAQ) {
         throw new Error('Unknown step type')
     }
 
-    async function compile(scene: (Say | Fill | Click | Select)[]): Promise<Scene> {
-        console.log('🚀', scene)
+    async function execute(scene: SceneItem['scene']) {
+        for (const step of scene) {
+            await visit(step, {
+                say: async () => { },
+                fill: async (fill) => {
+                    for (const { input, value } of fill) {
+                        const locator = page.locator(input)
+                        await locator.fill(value)
+                    }
+                },
+                click: async (input) => {
+                    await page.click(input)
+                },
+                select: async ({ input, value }) => {
+                    await page.selectOption(input, value)
+                },
+            })
+        }
+    }
 
-        const selectors = scene.map(step => {
-            if ('say' in step) return
-            if ('click' in step) return step.click
-            if ('fill' in step) return step.fill.map(e => e.input)
-            if ('select' in step) return Object.keys(step.select)
-        }).filter(e => e !== undefined).flat()
+    async function compile(scene: (Say | Fill | Click | Select)[]): Promise<Scene> {
+        const selectors = scene.map(step => visit<string | string[]>(step, {
+            say: () => [],
+            click: (input) => input,
+            fill: (actions) => actions.map(({ input }) => input),
+            select: (action) => action.input,
+        })).flat()
 
 
         const locators = await Promise.all(selectors.map(async name => ({
@@ -116,36 +139,28 @@ async function main(faqScript: FAQ) {
         })
 
         const image = await screenshot()
+        const steps: Step[] = scene.map(step => visit<Step | Step[]>(step, {
+            say: (text) => ({ type: 'say', text }),
+            click: (input) => ({ type: 'click', input }),
+            fill: (actions) => actions.map(({ input, value }) =>
+                ({ type: 'fill', input, value })),
 
-        for (const step of scene) {
-            await visit(step, {
-                say: async () => { },
-                fill: async (fill) => {
-                    for (const { input, value } of fill) {
-                        const locator = page.locator(input)
-                        await locator.fill(value)
-                    }
-                },
-                click: async (input) => {
-                    await page.click(input)
-                },
-                select: async ({ input, value }) => {
-                    await page.selectOption(input, value)
-                },
-            })
-        }
+            select: (action) => ({ type: 'select', ...action }),
+        })).flat()
 
         return {
-            image,
+            image: '',
             width,
             height,
             names: Object.fromEntries(boxes.map(({ name, box }) => [name, box])),
+            steps
         }
     }
 
     const scenes: Scene[] = []
     for (const scene of faq.scenes) scenes.push(await compile(scene.scene))
 
+    console.log('✅ Compiled', scenes)
     await context.close()
 }
 
