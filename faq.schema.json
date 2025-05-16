@@ -1,0 +1,90 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "FAQ Script",
+    "type": "object",
+    "required": [
+        "faq"
+    ],
+    "properties": {
+        "faq": {
+            "type": "object",
+            "required": [
+                "id",
+                "voice",
+                "domain",
+                "path",
+                "steps"
+            ],
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "voice": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "cookies": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "minProperties": 1,
+                        "maxProperties": 1,
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "steps": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "minProperties": 1,
+                        "maxProperties": 1,
+                        "properties": {
+                            "description": {
+                                "type": "string"
+                            },
+                            "click": {
+                                "type": "string"
+                            },
+                            "wait": {
+                                "type": "string"
+                            },
+                            "screenshot": {
+                                "type": "boolean"
+                            },
+                            "fill": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "minProperties": 1,
+                                    "maxProperties": 1,
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "select": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "minProperties": 1,
+                                    "maxProperties": 1,
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                }
+            }
+        }
+    }
+}

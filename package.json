@@ -1,0 +1,16 @@
+{
+  "name": "@faq.cool/client",
+  "version": "0.0.0",
+  "description": "A FAQing Cool FAQ Generator",
+  "main": "src/index.ts",
+  "keywords": [],
+  "author": "Gilad Kutiel",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.15.17"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.52.0",
+    "sharp": "^0.34.1"
+  }
+}
