@@ -63,9 +63,22 @@
             "type": "object",
             "properties": {
                 "fill": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "input": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "input",
+                            "value"
+                        ],
+                        "additionalProperties": false
                     }
                 }
             },
@@ -91,9 +104,19 @@
             "properties": {
                 "select": {
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "properties": {
+                        "input": {
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "input",
+                        "value"
+                    ],
+                    "additionalProperties": false
                 }
             },
             "required": [
@@ -126,7 +149,8 @@
             },
             "required": [
                 "scene"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }
