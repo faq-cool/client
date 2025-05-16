@@ -1,31 +1,22 @@
 import { chromium } from '@playwright/test'
-import FAQScript from './config'
+import { readFile } from 'fs/promises'
+import yaml from 'yaml'
+import { z } from 'zod'
+import schema from './schema.ts'
 
-import Ajv from 'ajv'
-import addErrors from 'ajv-errors'
-import addFormats from 'ajv-formats'
-import fs from 'fs'
-import YAML from 'yaml'
+type Schema = z.infer<typeof schema>
+type FAQ = Schema['faq']
 
-
-const schemaPath = require.resolve('@faq.cool/client/faq.schema.json')
-const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'))
-const ajv = new Ajv({ allErrors: true, strict: false })
-addFormats(ajv)
-addErrors(ajv)
-const validate = ajv.compile(schema)
-
-function load(path_yaml: string): FAQScript {
-    const file = fs.readFileSync(path_yaml, 'utf8')
-    const data = YAML.parse(file)
-
-    if (validate(data)) return data as FAQScript
-
-    console.error('❌ Validation failed:\n', validate.errors)
-    process.exit(1)
+async function load(path_yaml: string) {
+    const f = await readFile(
+        path_yaml, {
+        encoding: 'utf-8',
+    })
+    const obj = yaml.parse(f)
+    return schema.parse(obj).faq
 }
 
-async function main(config: FAQScript) {
+async function main(faq: FAQ) {
     const viewport = { width: 1024, height: 768 }
     const browser = await chromium.launch()
     const context = await browser.newContext({
@@ -34,11 +25,23 @@ async function main(config: FAQScript) {
         deviceScaleFactor: 1,
     })
 
-    context.addCookies(config.faq.cookies?.map(c => ({
-        name: c.name,
-        value: c.value,
-        domain: config.faq.domain,
-    })) ?? [])
+    const cs = Object
+        .entries(faq.cookies)
+        .map(([name, value]) => ({
+            name,
+            value,
+            domain: faq.domain,
+            path: '/',
+        }))
+
+    context.addCookies(cs)
+
+    const page = await context.newPage()
+    await page.goto(`https://${faq.domain}${faq.path}`)
+    await page.waitForLoadState()
+    await screenshot()
+
+    const steps = []
 
     async function click(click: string) {
         console.log('🔗', click)
@@ -49,33 +52,31 @@ async function main(config: FAQScript) {
     }
 
     async function screenshot() {
-        console.log('📸', config.faq.home)
+        console.log('📸')
     }
 
     async function wait(wait: string) {
         console.log('⏳', wait)
     }
 
-    async function fill(fill: { [k: string]: string }[]) {
-        console.log('✏️', fill)
+    async function fill(fill: { [k: string]: string }) {
+        Object.entries(fill).forEach(async ([k, v]) => {
+            await page.locator(k).fill(v)
+        })
     }
 
-    async function select(select: { [k: string]: string }[]) {
+    async function select(select: { [k: string]: string }) {
         console.log('📋', select)
     }
 
-    config.faq.steps.forEach(async (step, i) => {
-        if (step.click) await click(step.click)
-        if (step.description) await description(step.description)
-        if (step.fill) await fill(step.fill)
-        if (step.screenshot) await screenshot()
-        if (step.select) await select(step.select)
-        if (step.wait) await wait(step.wait)
+
+    faq.scenes.forEach(async (scene, i) => {
+        console.log(i, scene)
     })
 }
 
-const config = load('demo/session.yaml')
+const faq = await load('demo/demo.yaml')
 
-main(config)
+main(faq)
     .then(() => console.log('✅ Done'))
     .finally(process.exit)
