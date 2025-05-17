@@ -5,6 +5,9 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+export type Step = Say | Fill | Click | Highlight | Select | File;
+export type KeyVals = KeyValue[];
+
 export interface FAQ {
   faq: {
     id: number;
@@ -1570,23 +1573,26 @@ export interface FAQ {
   [k: string]: unknown;
 }
 export interface SceneItem {
-  scene: (Say | Fill | Click | Select)[];
+  scene: Step[];
 }
 export interface Say {
   say: string;
 }
 export interface Fill {
-  fill: {
-    input: string;
-    value: string;
-  }[];
+  fill: KeyVals;
+}
+export interface KeyValue {
+  [k: string]: string;
 }
 export interface Click {
   click: string;
 }
+export interface Highlight {
+  highlight: string;
+}
 export interface Select {
-  select: {
-    input: string;
-    value: string;
-  };
+  select: KeyVals;
+}
+export interface File {
+  file: KeyVals;
 }

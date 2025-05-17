@@ -59,34 +59,6 @@
             ],
             "additionalProperties": false
         },
-        "Fill": {
-            "type": "object",
-            "properties": {
-                "fill": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "input": {
-                                "type": "string"
-                            },
-                            "value": {
-                                "type": "string"
-                            }
-                        },
-                        "required": [
-                            "input",
-                            "value"
-                        ],
-                        "additionalProperties": false
-                    }
-                }
-            },
-            "required": [
-                "fill"
-            ],
-            "additionalProperties": false
-        },
         "Click": {
             "type": "object",
             "properties": {
@@ -99,24 +71,61 @@
             ],
             "additionalProperties": false
         },
+        "Highlight": {
+            "type": "object",
+            "properties": {
+                "highlight": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "highlight"
+            ],
+            "additionalProperties": false
+        },
+        "Wait": {
+            "type": "object",
+            "properties": {
+                "wait": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "wait"
+            ],
+            "additionalProperties": false
+        },
+        "KeyValue": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "additionalProperties": {
+                "type": "string"
+            }
+        },
+        "KeyVals": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/KeyValue"
+            }
+        },
+        "Fill": {
+            "type": "object",
+            "properties": {
+                "fill": {
+                    "$ref": "#/$defs/KeyVals"
+                }
+            },
+            "required": [
+                "fill"
+            ],
+            "additionalProperties": false
+        },
         "Select": {
             "type": "object",
             "properties": {
                 "select": {
-                    "type": "object",
-                    "properties": {
-                        "input": {
-                            "type": "string"
-                        },
-                        "value": {
-                            "type": "string"
-                        }
-                    },
-                    "required": [
-                        "input",
-                        "value"
-                    ],
-                    "additionalProperties": false
+                    "$ref": "#/$defs/KeyVals"
                 }
             },
             "required": [
@@ -124,26 +133,50 @@
             ],
             "additionalProperties": false
         },
+        "File": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "$ref": "#/$defs/KeyVals"
+                }
+            },
+            "required": [
+                "file"
+            ],
+            "additionalProperties": false
+        },
+        "Step": {
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/Say"
+                },
+                {
+                    "$ref": "#/$defs/Fill"
+                },
+                {
+                    "$ref": "#/$defs/Click"
+                },
+                {
+                    "$ref": "#/$defs/Highlight"
+                },
+                {
+                    "$ref": "#/$defs/Wait"
+                },
+                {
+                    "$ref": "#/$defs/Select"
+                },
+                {
+                    "$ref": "#/$defs/File"
+                }
+            ]
+        },
         "SceneItem": {
             "type": "object",
             "properties": {
                 "scene": {
                     "type": "array",
                     "items": {
-                        "oneOf": [
-                            {
-                                "$ref": "#/$defs/Say"
-                            },
-                            {
-                                "$ref": "#/$defs/Fill"
-                            },
-                            {
-                                "$ref": "#/$defs/Click"
-                            },
-                            {
-                                "$ref": "#/$defs/Select"
-                            }
-                        ]
+                        "$ref": "#/$defs/Step"
                     }
                 }
             },

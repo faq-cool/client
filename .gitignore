@@ -8,3 +8,4 @@ demo
 .env.local
 steps.json
 tmp.yaml
+faq.json
