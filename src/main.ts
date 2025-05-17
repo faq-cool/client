@@ -1,12 +1,13 @@
+import faq from '@faq.cool/server'
 import { chromium } from '@playwright/test'
-import { readFile, writeFile } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import sharp from 'sharp'
 import yaml from 'yaml'
+import api from './api'
 import { FAQ, KeyVals, KeyValue, SceneItem, Step } from './schema'
 
 function logger() {
     const start = Date.now()
-
     return (...args: any[]) => {
         const elapsed = Date.now() - start
 
@@ -35,27 +36,8 @@ async function load(path_yaml: string) {
 }
 
 namespace out {
-    interface Box {
-        x: number
-        y: number
-        width: number
-        height: number
-    }
-
-    export type Step =
-        | { type: 'say', text: string }
-        | { type: 'click', input: string }
-        | { type: 'highlight', input: string }
-        | { type: 'fill', input: string, value: string }
-        | { type: 'select', input: string, value: string }
-
-    export interface Scene {
-        image: string
-        width: number
-        height: number
-        names: { [k: string]: Box | null }
-        steps: Step[]
-    }
+    export type Step = faq.Step
+    export type Scene = faq.Scene
 }
 
 async function main(faqScript: FAQ) {
@@ -104,7 +86,6 @@ async function main(faqScript: FAQ) {
         'say': (text: string) => T
         'click': (input: string) => T
         'highlight': (input: string) => T
-        'wait': (input: string) => T
 
         'fill': (actions: KeyVals) => T
         'select': (actions: KeyVals) => T
@@ -114,11 +95,14 @@ async function main(faqScript: FAQ) {
     function visit<T>(step: Step, visitor: Visitor<T>) {
         if ('say' in step) return visitor.say(step.say)
         if ('click' in step) return visitor.click(step.click)
+        if ('highlight' in step) return visitor.highlight(step.highlight)
+
         if ('fill' in step) return visitor.fill(step.fill)
         if ('select' in step) return visitor.select(step.select)
         if ('file' in step) return visitor.file(step.file)
-        if ('highlight' in step) return visitor.highlight(step.highlight)
-        throw new Error('Unknown step type')
+
+        console.error('Unknown step', step)
+        process.exit(1)
     }
 
     const kvs = (ks: KeyVals) => ks.map((o) => Object.entries(o)).flat()
@@ -133,11 +117,6 @@ async function main(faqScript: FAQ) {
                     await page.click(input)
                 },
                 highlight: async (input) => { },
-                wait: async (input) => {
-                    await page.waitForSelector(input, {
-                        state: 'visible',
-                    })
-                },
 
                 fill: async (fill) => {
                     for (const [k, v] of kvs(fill)) {
@@ -147,11 +126,13 @@ async function main(faqScript: FAQ) {
                 },
                 select: async (select) => {
                     for (const [k, v] of kvs(select)) {
+                        log('Selecting', k, v)
                         await page.selectOption(k, v)
                     }
                 },
                 file: async (file) => {
                     for (const [k, v] of kvs(file)) {
+                        log('Uploading File', k, v)
                         await page.setInputFiles(k, v)
                     }
                 },
@@ -161,12 +142,37 @@ async function main(faqScript: FAQ) {
 
     type Steps = SceneItem['scene']
 
+    async function initScene() {
+        await page.waitForLoadState()
+        await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight)
+        })
+        await page.evaluate(() => {
+            window.scrollTo(0, 0)
+        })
+        await page.evaluate(() => {
+            return Promise.all(
+                Array.from(document.images).map(img => {
+                    if (img.complete && img.naturalWidth !== 0) return Promise.resolve()
+                    return new Promise<void>((resolve, reject) => {
+                        img.addEventListener('load', () => resolve(), { once: true })
+                        img.addEventListener('error', () => reject('Image failed to load'), { once: true })
+                    })
+                })
+            )
+        })
+    }
     async function compile(scene: Steps): Promise<out.Scene> {
+        // LOAD AND SCROLL TO TOP
+        await initScene()
+
+
+
+        // GET ALL SELECTORS
         const selectors = scene.map(step => visit<string | string[]>(step, {
             say: () => [],
             click: (input) => input,
             highlight: (input) => input,
-            wait: (input) => input,
 
             fill: (actions) => actions.map((o) => Object.keys(o)).flat(),
             select: (actions) => actions.map((o) => Object.keys(o)).flat(),
@@ -178,31 +184,32 @@ async function main(faqScript: FAQ) {
             locator: page.locator(name),
         }))
 
-        log('Waiting for locators')
-        await Promise.all(locators.map(({ locator }) => locator.waitFor()))
-
+        // GETTING BOXES
         log('Waiting for boxes')
         const boxes = await Promise.all(locators.map(async ({ name, locator }) => {
             try {
-                return {
-                    name,
-                    box: await locator.boundingBox(),
-                }
+                const box = await locator.boundingBox()
+                if (box === null) return
+                return { name, box }
             } catch {
                 console.error('Error getting box for', name)
                 process.exit(1)
             }
         }))
 
+        // TAKING SCREENSHOT
+        log('Taking Screenshot')
+        const image = await screenshot()
+
+        // DOCUMENT SIZE
         log('Getting Document Size')
         const { width, height } = await page.evaluate(async () => {
             const { scrollWidth: width, scrollHeight: height } = document.documentElement
             return { width, height }
         })
 
-        log('Getting Image')
-        const image = await screenshot()
 
+        // STEPS
         log('Generating Steps')
         function o2s(type: 'fill' | 'select'): (o: KeyValue) => out.Step[] {
             return (o: KeyValue) =>
@@ -222,7 +229,6 @@ async function main(faqScript: FAQ) {
             say: (text) => ({ type: 'say', text }),
             click: (input) => ({ type: 'click', input }),
             highlight: (input) => ({ type: 'highlight', input }),
-            wait: () => [],
 
             fill: o2ss(o2s('fill')),
             select: o2ss(o2s('select')),
@@ -231,17 +237,18 @@ async function main(faqScript: FAQ) {
 
         const steps: out.Step[] = scene.map(step => visit<out.Step | out.Step[]>(step, stepVisitor)).flat()
 
+        // EXECUTING
         log('Executing')
         await execute(scene)
 
         log('Emitting')
-        return {
-            image,
-            width,
-            height,
-            names: Object.fromEntries(boxes.map(({ name, box }) => [name, box])),
-            steps
-        }
+        const names = Object
+            .fromEntries(
+                boxes
+                    .filter(e => e !== undefined)
+                    .map(({ name, box }) => [name, box]))
+
+        return { image, width, height, names, steps }
     }
 
     const scenes: out.Scene[] = []
@@ -250,9 +257,13 @@ async function main(faqScript: FAQ) {
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)))
     await browser.close()
 
-    await writeFile(
-        'faq.json',
-        JSON.stringify(scenes, null, 2))
+    log('Saving to faq.cool')
+    await api.save({
+        token: process.env.TOKEN as string,
+        faq_id: faq.id,
+        voice: faq.voice,
+        scenes,
+    })
 }
 
 const faq = await load('demo/yyy/new_studio.yaml')

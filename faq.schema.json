@@ -83,18 +83,6 @@
             ],
             "additionalProperties": false
         },
-        "Wait": {
-            "type": "object",
-            "properties": {
-                "wait": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "wait"
-            ],
-            "additionalProperties": false
-        },
         "KeyValue": {
             "type": "object",
             "minProperties": 1,
@@ -158,9 +146,6 @@
                 },
                 {
                     "$ref": "#/$defs/Highlight"
-                },
-                {
-                    "$ref": "#/$defs/Wait"
                 },
                 {
                     "$ref": "#/$defs/Select"
