@@ -143,12 +143,8 @@ async function main(faqScript: FAQ) {
 
     async function initScene() {
         await page.waitForLoadState()
-        await page.evaluate(() => {
-            window.scrollTo(0, document.body.scrollHeight)
-        })
-        await page.evaluate(() => {
-            window.scrollTo(0, 0)
-        })
+
+        // WAIT FOR IMAGES
         await page.evaluate(() => {
             return Promise.all(
                 Array.from(document.images).map(img => {
@@ -160,12 +156,11 @@ async function main(faqScript: FAQ) {
                 })
             )
         })
+
     }
+
     async function compile(scene: Steps): Promise<out.Scene> {
-        // LOAD AND SCROLL TO TOP
         await initScene()
-
-
 
         // GET ALL SELECTORS
         const selectors = scene.map(step => visit<string | string[]>(step, {
@@ -185,11 +180,22 @@ async function main(faqScript: FAQ) {
 
         // GETTING BOXES
         log('Waiting for boxes')
+        const { sx, sy } = await page.evaluate(() => {
+            return { sx: window.scrollX, sy: window.scrollY }
+        })
+
         const boxes = await Promise.all(locators.map(async ({ name, locator }) => {
             try {
                 const box = await locator.boundingBox()
                 if (box === null) return
-                return { name, box }
+                return {
+                    name, box: {
+                        x: box.x + sx,
+                        y: box.y + sy,
+                        width: box.width,
+                        height: box.height,
+                    }
+                }
             } catch {
                 console.error('Error getting box for', name)
                 process.exit(1)
