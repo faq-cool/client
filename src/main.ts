@@ -1,6 +1,6 @@
 import faq from '@faq.cool/server'
 import { chromium } from '@playwright/test'
-import { readFile } from 'fs/promises'
+import { readFile, writeFile } from 'fs/promises'
 import sharp from 'sharp'
 import yaml from 'yaml'
 import api from './api'
@@ -108,7 +108,6 @@ async function main(faqScript: FAQ) {
     const kvs = (ks: KeyVals) => ks.map((o) => Object.entries(o)).flat()
 
     async function execute(scene: SceneItem['scene']) {
-        log('Executing scene')
         for (const step of scene) {
             await visit(step, {
                 say: async () => { },
@@ -257,16 +256,26 @@ async function main(faqScript: FAQ) {
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)))
     await browser.close()
 
-    log('Saving to faq.cool')
-    await api.save({
+    log('Saving to faq.json')
+    const save = {
         token: process.env.TOKEN as string,
         faq_id: faq.id,
         voice: faq.voice,
         scenes,
-    })
+    }
+
+    await writeFile('faq.json', JSON.stringify(
+        save,
+        (k, v) => k == 'image' ? '' : v,
+        2))
+
+    log('Saving to faq.cool')
+    await api.save(save)
 }
 
-const faq = await load('demo/yyy/new_studio.yaml')
+// const file = '/home/gilad/Work/yomyomyoga.com/web/faq/new_class.yaml'
+const file = '/home/gilad/Work/yomyomyoga.com/web/faq/new_session.yaml'
+const faq = await load(file)
 
 main(faq)
     .then(() => console.log('✅ Done'))
