@@ -103,15 +103,7 @@ async function main(faqScript: FAQ) {
 
     type Keys<T> = T extends any ? keyof T : never
     type type = Keys<Step>
-    interface Visitor<T> extends Record<type, (...args: any[]) => T> {
-        'say': (text: string) => T
-        'click': (input: string) => T
-        'highlight': (input: string) => T
-
-        'fill': (actions: KeyVals) => T
-        'select': (actions: KeyVals) => T
-        'file': (actions: KeyVals) => T
-    }
+    type Visitor<T> = { [k in type]: (...ps: any) => T }
 
     function visit<T>(step: Step, visitor: Visitor<T>) {
         if ('say' in step) return visitor.say(step.say)
@@ -119,7 +111,7 @@ async function main(faqScript: FAQ) {
         if ('highlight' in step) return visitor.highlight(step.highlight)
 
         if ('fill' in step) return visitor.fill(step.fill)
-        if ('mask' in step) return visitor.fill(step.mask)
+        if ('mask' in step) return visitor.mask(step.mask)
         if ('select' in step) return visitor.select(step.select)
         if ('file' in step) return visitor.file(step.file)
 
