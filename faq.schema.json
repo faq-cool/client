@@ -38,9 +38,9 @@
                 "voice",
                 "domain",
                 "path",
-                "cookies",
                 "scenes"
-            ]
+            ],
+            "additionalProperties": false
         }
     },
     "required": [
@@ -109,6 +109,18 @@
             ],
             "additionalProperties": false
         },
+        "Mask": {
+            "type": "object",
+            "properties": {
+                "mask": {
+                    "$ref": "#/$defs/KeyVals"
+                }
+            },
+            "required": [
+                "mask"
+            ],
+            "additionalProperties": false
+        },
         "Select": {
             "type": "object",
             "properties": {
@@ -140,6 +152,9 @@
                 },
                 {
                     "$ref": "#/$defs/Fill"
+                },
+                {
+                    "$ref": "#/$defs/Mask"
                 },
                 {
                     "$ref": "#/$defs/Click"

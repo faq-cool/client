@@ -42,17 +42,38 @@ namespace out {
 
 async function main(faqScript: FAQ) {
     const log = logger()
+
     const viewport = { width: 1024, height: 768 }
-    const browser = await chromium.launch({ headless: true })
+    const browser = await chromium.launch({
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-blink-features=AutomationControlled',
+            '--disable-gpu',
+            '--no-first-run',
+            '--no-default-browser-check',
+            '--disable-infobars'
+        ],
+    })
+
     const context = await browser.newContext({
         viewport,
-        screen: viewport,
-        deviceScaleFactor: 1,
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        colorScheme: 'light',
+        javaScriptEnabled: true,
+    })
+
+    await context.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', {
+            get: () => false,
+        })
     })
 
     const { faq } = faqScript
     const cs = Object
-        .entries(faq.cookies)
+        .entries(faq.cookies || {})
         .map(([name, value]) => ({
             name,
             value,
@@ -98,6 +119,7 @@ async function main(faqScript: FAQ) {
         if ('highlight' in step) return visitor.highlight(step.highlight)
 
         if ('fill' in step) return visitor.fill(step.fill)
+        if ('mask' in step) return visitor.fill(step.mask)
         if ('select' in step) return visitor.select(step.select)
         if ('file' in step) return visitor.file(step.file)
 
@@ -106,6 +128,13 @@ async function main(faqScript: FAQ) {
     }
 
     const kvs = (ks: KeyVals) => ks.map((o) => Object.entries(o)).flat()
+
+    const fillOrMask = async (keyVals: KeyVals) => {
+        for (const [k, v] of kvs(keyVals)) {
+            log('Fill Or Mask', k, v)
+            await page.fill(k, v)
+        }
+    }
 
     async function execute(scene: SceneItem['scene']) {
         for (const step of scene) {
@@ -117,12 +146,8 @@ async function main(faqScript: FAQ) {
                 },
                 highlight: async (input) => { },
 
-                fill: async (fill) => {
-                    for (const [k, v] of kvs(fill)) {
-                        log('Filling', k, v)
-                        await page.fill(k, v)
-                    }
-                },
+                fill: fillOrMask,
+                mask: fillOrMask,
                 select: async (select) => {
                     for (const [k, v] of kvs(select)) {
                         log('Selecting', k, v)
@@ -141,36 +166,26 @@ async function main(faqScript: FAQ) {
 
     type Steps = SceneItem['scene']
 
-    async function initScene() {
-        await page.waitForLoadState()
-
-        // WAIT FOR IMAGES
-        await page.evaluate(() => {
-            return Promise.all(
-                Array.from(document.images).map(img => {
-                    if (img.complete && img.naturalWidth !== 0) return Promise.resolve()
-                    return new Promise<void>((resolve, reject) => {
-                        img.addEventListener('load', () => resolve(), { once: true })
-                        img.addEventListener('error', () => reject('Image failed to load'), { once: true })
-                    })
-                })
-            )
-        })
-
+    interface Init {
+        timeout?: number
     }
 
     async function compile(scene: Steps): Promise<out.Scene> {
-        await initScene()
+        // await initScene()
+        log('Waiting for page to load')
+        await page.waitForLoadState('load', { timeout: 5000 })
 
         // GET ALL SELECTORS
+        const keys = (keyVals: KeyVals) => keyVals.map((o) => Object.keys(o)).flat()
         const selectors = scene.map(step => visit<string | string[]>(step, {
             say: () => [],
             click: (input) => input,
             highlight: (input) => input,
 
-            fill: (actions) => actions.map((o) => Object.keys(o)).flat(),
-            select: (actions) => actions.map((o) => Object.keys(o)).flat(),
-            file: (actions) => actions.map((o) => Object.keys(o)).flat(),
+            fill: keys,
+            mask: keys,
+            select: keys,
+            file: keys,
         })).flat()
 
         const locators = selectors.map(name => ({
@@ -179,13 +194,14 @@ async function main(faqScript: FAQ) {
         }))
 
         // GETTING BOXES
-        log('Waiting for boxes')
+        log('Getting scroll position')
         const { sx, sy } = await page.evaluate(() => {
             return { sx: window.scrollX, sy: window.scrollY }
         })
 
         const boxes = await Promise.all(locators.map(async ({ name, locator }) => {
             try {
+                log('Getting box for', name, await locator.count())
                 const box = await locator.boundingBox()
                 if (box === null) return
                 return {
@@ -216,12 +232,12 @@ async function main(faqScript: FAQ) {
 
         // STEPS
         log('Generating Steps')
-        function o2s(type: 'fill' | 'select'): (o: KeyValue) => out.Step[] {
+        function o2s(type: 'fill' | 'select', v2v = (v: string): string => v): (o: KeyValue) => out.Step[] {
             return (o: KeyValue) =>
                 Object.entries(o).map(([input, value]) => ({
                     type,
                     input,
-                    value
+                    value: v2v(value)
                 })).flat()
         }
 
@@ -236,6 +252,7 @@ async function main(faqScript: FAQ) {
             highlight: (input) => ({ type: 'highlight', input }),
 
             fill: o2ss(o2s('fill')),
+            mask: o2ss(o2s('fill', v => '*'.repeat(v.length))),
             select: o2ss(o2s('select')),
             file: () => []
         }
@@ -279,10 +296,10 @@ async function main(faqScript: FAQ) {
     await api.save(save)
 }
 
-// const file = '/home/gilad/Work/yomyomyoga.com/web/faq/new_class.yaml'
-const file = '/home/gilad/Work/yomyomyoga.com/web/faq/new_session.yaml'
+const file = '/home/gilad/Work/faq.cool/server/demo.yaml'
 const faq = await load(file)
 
 main(faq)
     .then(() => console.log('✅ Done'))
+    .catch(console.error)
     .finally(process.exit)
