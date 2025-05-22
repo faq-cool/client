@@ -1,10 +1,9 @@
-import faq from '@faq.cool/server'
+import faq from '@faq.cool/types'
 import { chromium } from '@playwright/test'
-import { readFile, writeFile } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import sharp from 'sharp'
 import yaml from 'yaml'
-import api from './api'
-import { FAQ, KeyVals, KeyValue, SceneItem, Step } from './schema'
+import { FAQ, KeyVals, KeyValue, Scene, Step } from './schema'
 
 function logger() {
     const start = Date.now()
@@ -27,7 +26,7 @@ function logger() {
     }
 }
 
-async function load(path_yaml: string) {
+export async function load(path_yaml: string) {
     const f = await readFile(
         path_yaml, {
         encoding: 'utf-8',
@@ -40,12 +39,29 @@ namespace out {
     export type Scene = faq.Scene
 }
 
-async function main(faqScript: FAQ) {
-    const log = logger()
+interface Options {
+    width?: number
+    height?: number
+    headless?: boolean
+}
 
-    const viewport = { width: 1024, height: 768 }
+interface Params {
+    script: FAQ
+    options?: Options
+}
+
+export async function run({ script, options }: Params) {
+    const log = logger()
+    const {
+        width = 1024,
+        height = 768,
+        headless = true,
+    } = options || {}
+
+    const viewport = { width, height }
+
     const browser = await chromium.launch({
-        headless: true,
+        headless,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -71,7 +87,7 @@ async function main(faqScript: FAQ) {
         })
     })
 
-    const { faq } = faqScript
+    const { faq } = script
     const cs = Object
         .entries(faq.cookies || {})
         .map(([name, value]) => ({
@@ -128,7 +144,7 @@ async function main(faqScript: FAQ) {
         }
     }
 
-    async function execute(scene: SceneItem['scene']) {
+    async function execute(scene: Scene) {
         for (const step of scene) {
             await visit(step, {
                 say: async () => { },
@@ -156,14 +172,7 @@ async function main(faqScript: FAQ) {
         }
     }
 
-    type Steps = SceneItem['scene']
-
-    interface Init {
-        timeout?: number
-    }
-
-    async function compile(scene: Steps): Promise<out.Scene> {
-        // await initScene()
+    async function compile(scene: Scene): Promise<out.Scene> {
         log('Waiting for page to load')
         await page.waitForLoadState('load', { timeout: 5000 })
 
@@ -180,6 +189,8 @@ async function main(faqScript: FAQ) {
             file: keys,
         })).flat()
 
+        log('Selectors', selectors)
+
         const locators = selectors.map(name => ({
             name,
             locator: page.locator(name),
@@ -193,7 +204,7 @@ async function main(faqScript: FAQ) {
 
         const boxes = await Promise.all(locators.map(async ({ name, locator }) => {
             try {
-                log('Getting box for', name, await locator.count())
+                log('Getting box for', name)
                 const box = await locator.boundingBox()
                 if (box === null) return
                 return {
@@ -266,27 +277,17 @@ async function main(faqScript: FAQ) {
     }
 
     const scenes: out.Scene[] = []
-    for (const scene of faq.scenes) scenes.push(await compile(scene.scene))
+    for (const scene of faq.scenes) scenes.push(await compile(scene))
 
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)))
     await browser.close()
 
-    log('Saving to faq.json')
-    const save = {
+
+    return {
         token: process.env.TOKEN as string,
-        faq_id: faq.id,
         voice: faq.voice,
         scenes,
     }
-
-    await writeFile('faq.json', JSON.stringify(
-        save,
-        (k, v) => k == 'image' ? '' : v,
-        2))
-
-    log('Saving to faq.cool')
-    await api.save(save)
 }
 
 
-console.log('Starting')

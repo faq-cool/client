@@ -1,11 +1,10 @@
-import faq from "@faq.cool/server"
+import faq from "@faq.cool/types"
 
 const API = 'http://localhost:3000/api'
 const SAVE = `${API}/save`
 
-namespace api {
-
-    export async function save(faq: faq.Save) {
+export namespace api {
+    export async function save(faq: faq.Faq) {
         const res = await fetch(SAVE, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -16,4 +15,3 @@ namespace api {
     }
 }
 
-export default api

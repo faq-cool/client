@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "author": "Gilad Kutiel",
   "devDependencies": {
+    "@faq.cool/types": "^0.0.17",
     "@types/node": "^22.15.17",
     "json-schema-to-typescript": "^15.0.4",
     "tsup": "^8.5.0",
@@ -16,10 +17,6 @@
     "commander": "^14.0.0",
     "sharp": "^0.34.1",
     "yaml": "^2.8.0"
-  },
-  "scripts": {
-    "build": "tsup",
-    "publish": "npm run build && npm publish --access public"
   },
   "bin": {
     "faq": "dist/faq.js"

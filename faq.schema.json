@@ -7,9 +7,6 @@
         "faq": {
             "type": "object",
             "properties": {
-                "id": {
-                    "type": "integer"
-                },
                 "voice": {
                     "$ref": "voice.schema.json#/$defs/Voice"
                 },
@@ -29,12 +26,11 @@
                 "scenes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/$defs/SceneItem"
+                        "$ref": "#/$defs/Scene"
                     }
                 }
             },
             "required": [
-                "id",
                 "voice",
                 "domain",
                 "path",
@@ -170,20 +166,11 @@
                 }
             ]
         },
-        "SceneItem": {
-            "type": "object",
-            "properties": {
-                "scene": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/$defs/Step"
-                    }
-                }
-            },
-            "required": [
-                "scene"
-            ],
-            "additionalProperties": false
+        "Scene": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/Step"
+            }
         }
     }
 }

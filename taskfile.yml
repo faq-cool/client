@@ -1,0 +1,22 @@
+version: "3"
+
+tasks:
+  patch:
+    desc: Bump the patch version
+    cmds:
+      - npm version patch
+    silent: true
+
+  build:
+    desc: Build
+    cmds:
+      - tsup
+    silent: true
+
+  publish:
+    desc: Publish the package to npm
+    cmds:
+      - npm publish
+    deps:
+      - patch
+      - build
