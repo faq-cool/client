@@ -288,10 +288,5 @@ async function main(faqScript: FAQ) {
     await api.save(save)
 }
 
-const file = '/home/gilad/Work/faq.cool/server/demo.yaml'
-const faq = await load(file)
 
-main(faq)
-    .then(() => console.log('✅ Done'))
-    .catch(console.error)
-    .finally(process.exit)
+console.log('Starting')

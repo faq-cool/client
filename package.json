@@ -1,22 +1,27 @@
 {
   "name": "@faq.cool/client",
-  "version": "0.0.0",
   "description": "A FAQing Cool FAQ Generator",
+  "version": "0.0.0",
   "main": "src/index.ts",
-  "keywords": [],
   "author": "Gilad Kutiel",
-  "license": "ISC",
-  "files": [
-    "src",
-    "faq.schema.json"
-  ],
   "devDependencies": {
     "@types/node": "^22.15.17",
-    "json-schema-to-typescript": "^15.0.4"
+    "json-schema-to-typescript": "^15.0.4",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@playwright/test": "^1.52.0",
+    "chalk": "^5.4.1",
+    "commander": "^14.0.0",
     "sharp": "^0.34.1",
     "yaml": "^2.8.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "publish": "npm run build && npm publish --access public"
+  },
+  "bin": {
+    "faq": "dist/faq.js"
   }
 }
