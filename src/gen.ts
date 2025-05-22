@@ -70,7 +70,10 @@ export async function run({ script, options }: Params) {
             '--disable-gpu',
             '--no-first-run',
             '--no-default-browser-check',
-            '--disable-infobars'
+            '--disable-infobars',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-web-security',
+            '--enable-features=NetworkService,NetworkServiceInProcess',
         ],
     })
 
@@ -82,9 +85,9 @@ export async function run({ script, options }: Params) {
     })
 
     await context.addInitScript(() => {
-        Object.defineProperty(navigator, 'webdriver', {
-            get: () => false,
-        })
+        Object.defineProperty(navigator, 'webdriver', { get: () => false })
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] })
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] })
     })
 
     const { faq } = script
@@ -197,24 +200,27 @@ export async function run({ script, options }: Params) {
         }))
 
         // GETTING BOXES
+        await Promise.all(locators.map(async ({ locator }) => locator.waitFor({ state: 'attached' })))
+
         log('Getting scroll position')
         const { sx, sy } = await page.evaluate(() => {
             return { sx: window.scrollX, sy: window.scrollY }
         })
 
+        log('Scroll position', sx, sy)
+
         const boxes = await Promise.all(locators.map(async ({ name, locator }) => {
             try {
                 log('Getting box for', name)
-                const box = await locator.boundingBox()
-                if (box === null) return
-                return {
-                    name, box: {
-                        x: box.x + sx,
-                        y: box.y + sy,
-                        width: box.width,
-                        height: box.height,
-                    }
+                const bb = await locator.boundingBox()
+                if (bb === null) return
+                const box = {
+                    x: bb.x + sx,
+                    y: bb.y + sy,
+                    width: bb.width,
+                    height: bb.height,
                 }
+                return { name, box }
             } catch {
                 console.error('Error getting box for', name)
                 process.exit(1)

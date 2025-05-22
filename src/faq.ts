@@ -15,19 +15,21 @@ program
 const cmd = program
     .command('run <path.yml>')
     .description('Generating faq from yaml')
-    .option('-w, --width <number>', 'Viewport width', '1024')
-    .option('-h, --height <number>', 'Viewport height', '768')
+    .option('-w, --width <number>', 'Viewport width', Number, 1024)
+    .option('-h, --height <number>', 'Viewport height', Number, 768)
     .option('--headed', 'Run in headed mode')
+    .option('-d, --dry', 'Run in dry run mode')
+    .option('-i, --id <number>', 'Update existing faq id', Number)
     .action(async (yaml) => {
         console.log('Generating faq from yaml', yaml)
 
         const script = await load(yaml) as FAQ
-        const { width, height, headed } = cmd.opts()
+        const { width, height, headed, dry, id } = cmd.opts()
 
         const faq = await run({
             script, options: {
-                width: Number(width),
-                height: Number(height),
+                width,
+                height,
                 headless: !headed,
             }
         })
@@ -39,10 +41,16 @@ const cmd = program
             JSON.stringify(
                 faq, (k, v) => k == 'image' ? '' : v, 2))
 
-        console.log('Saving to faq.cool')
-        const res = await api.save(faq)
 
-        console.log('Saved to faq.cool', res)
+        if (!dry) {
+            console.log('Saving to faq.cool')
+            const res = await api.save({
+                ...faq,
+                ...(id ? { faq_id: id } : {})
+            })
+
+            console.log('Saved to faq.cool', res)
+        }
 
     })
 
