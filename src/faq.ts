@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import { config } from 'dotenv'
 import { writeFile } from 'fs/promises'
 import { version } from '../package.json'
 import { api } from './api'
@@ -21,7 +22,15 @@ const cmd = program
     .option('-d, --dry', 'Run in dry run mode')
     .option('-i, --id <number>', 'Update existing faq id', Number)
     .action(async (yaml) => {
-        console.log('Generating faq from yaml', yaml)
+        config({ path: '.env' })
+        const token = process.env.TOKEN as string
+        console.log('Token', token)
+        if (!token) {
+            console.error('Please set the TOKEN environment variable')
+            process.exit(1)
+        }
+
+        console.log('Generating faq from', yaml)
 
         const script = await load(yaml) as FAQ
         const { width, height, headed, dry, id } = cmd.opts()
@@ -45,6 +54,7 @@ const cmd = program
         if (!dry) {
             console.log('Saving to faq.cool')
             const res = await api.save({
+                token,
                 ...faq,
                 ...(id ? { faq_id: id } : {})
             })

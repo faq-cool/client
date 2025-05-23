@@ -1,25 +1,25 @@
 # yaml-language-server: $schema=/home/gilad/Work/faq.cool/client/faq.schema.json
 faq:
-    voice: en-US-Chirp-HD-F
-    domain: www.saucedemo.com
-    path: /
+  voice: en-US-Chirp-HD-F
+  domain: www.saucedemo.com
+  path: /
 
-    scenes:
-        - - say: Go to saucedemo dot com and enter your username and password
-          - fill:
-                - "#user-name": standard_user
-          - mask:
-                - "#password": secret_sauce
+  scenes:
+    - - say: Go to saucedemo dot com and enter your username and password
+      - fill:
+          - "#user-name": standard_user
+      - mask:
+          - "#password": secret_sauce
 
-          - say: Click on the login button
-          - click: "#login-button"
+      - say: Click on the login button
+      - click: "#login-button"
 
-        - - say: Click on the item you want to buy
+    - - say: Click on the item you want to buy
 
-          - click: "#item_5_img_link"
+      - click: "#item_5_img_link"
 
-        - - say: And add it to your cart
-          - click: "#add-to-cart"
+    - - say: And add it to your cart
+      - click: "#add-to-cart"
 
-        - - say: "The item was added to your cart"
-          - highlight: "#shopping_cart_container"
+    - - say: "The item was added to your cart"
+      - highlight: "#shopping_cart_container"

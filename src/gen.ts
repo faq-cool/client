@@ -290,7 +290,6 @@ export async function run({ script, options }: Params) {
 
 
     return {
-        token: process.env.TOKEN as string,
         voice: faq.voice,
         scenes,
     }
