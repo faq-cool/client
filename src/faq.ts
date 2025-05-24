@@ -34,8 +34,8 @@ program
 
 const cmdRun = program.command('run <path.yml>')
     .description('Generating faq from yaml')
-    .option('-w, --width <number>', 'Viewport width', Number, 1024)
-    .option('-h, --height <number>', 'Viewport height', Number, 768)
+    .option('-w, --width <number>', 'Viewport width', Number, 1280)
+    .option('-h, --height <number>', 'Viewport height', Number, 720)
     .option('--headed', 'Run in headed mode')
     .option('-d, --dry', 'Run in dry run mode')
     .option('-i, --id <number>', 'Update existing faq id', Number)

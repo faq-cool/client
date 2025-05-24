@@ -173,7 +173,14 @@ export async function run({ script, options }: Params) {
 
     async function compile(scene: Scene): Promise<out.Scene> {
         log('Waiting for page to load')
-        await page.waitForLoadState('load', { timeout: 5000 })
+        await page.waitForLoadState('networkidle', { timeout: 10000 })
+        await page.addStyleTag({
+            content: `
+              *, *::before, *::after {
+                transition: none !important;
+              }
+            `
+        })
 
         // GET ALL SELECTORS
         const keys = (keyVals: KeyVals) => keyVals.map((o) => Object.keys(o)).flat()
@@ -195,16 +202,28 @@ export async function run({ script, options }: Params) {
             locator: page.locator(name),
         }))
 
-        // GETTING BOXES
-        await Promise.all(locators.map(async ({ locator }) => locator.waitFor({ state: 'attached' })))
+        // WAITING FOR LOCATORS AND SET POSITION TO RELATIVE
+        await Promise.all(locators.map(async ({ locator }) => {
+            await locator.waitFor({ state: 'attached' })
+        }))
 
+        // GETTING BOXES
         log('Getting scroll position')
         const { sx, sy } = await page.evaluate(() => {
             return { sx: window.scrollX, sy: window.scrollY }
         })
 
-        log('Scroll position', sx, sy)
+        // DOCUMENT SIZE
+        log('Getting Document Size')
+        const { width, height } = await page.evaluate(async () => {
+            const { scrollWidth: width, scrollHeight: height } = document.documentElement
+            return { width, height }
+        })
 
+        // SETTING VIEWPORT SIZE
+        await page.setViewportSize({ width, height })
+
+        log('Scroll position', sx, sy)
         const boxes = await Promise.all(locators.map(async ({ name, locator }) => {
             try {
                 log('Getting box for', name)
@@ -223,16 +242,11 @@ export async function run({ script, options }: Params) {
             }
         }))
 
+
         // TAKING SCREENSHOT
         log('Taking Screenshot')
         const image = await screenshot()
 
-        // DOCUMENT SIZE
-        log('Getting Document Size')
-        const { width, height } = await page.evaluate(async () => {
-            const { scrollWidth: width, scrollHeight: height } = document.documentElement
-            return { width, height }
-        })
 
 
         // STEPS
