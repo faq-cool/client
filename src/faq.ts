@@ -3,7 +3,9 @@ import { config } from 'dotenv'
 import { writeFile } from 'fs/promises'
 import { version } from '../package.json'
 import { api } from './api'
-import { load, run } from './gen'
+import { auth } from './auth'
+import { open } from './open'
+import { load, run } from './run'
 import { FAQ } from './schema'
 
 const program = new Command()
@@ -13,8 +15,24 @@ program
     .description('FAQing cool FAQ generator')
     .version(version)
 
-const cmd = program
-    .command('run <path.yml>')
+program
+    .command('open')
+    .description('Open a browser')
+    .option('-a, --auth', 'Authentication json', 'auth.json')
+    .action(async () => {
+        console.log('Opening browser...')
+        await open()
+    })
+
+program
+    .command('auth')
+    .description('Authenticate and save')
+    .action(async () => {
+        console.log('Authenticating')
+        await auth()
+    })
+
+const cmdRun = program.command('run <path.yml>')
     .description('Generating faq from yaml')
     .option('-w, --width <number>', 'Viewport width', Number, 1024)
     .option('-h, --height <number>', 'Viewport height', Number, 768)
@@ -33,7 +51,7 @@ const cmd = program
         console.log('Generating faq from', yaml)
 
         const script = await load(yaml) as FAQ
-        const { width, height, headed, dry, id } = cmd.opts()
+        const { width, height, headed, dry, id } = cmdRun.opts()
 
         const faq = await run({
             script, options: {
@@ -55,6 +73,10 @@ const cmd = program
             console.log('Saving to faq.cool')
             const res = await api.save({
                 token,
+                viewport: {
+                    width,
+                    height,
+                },
                 ...faq,
                 ...(id ? { faq_id: id } : {})
             })

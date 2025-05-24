@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "author": "Gilad Kutiel",
   "devDependencies": {
-    "@faq.cool/types": "^0.0.17",
+    "@faq.cool/types": "^0.0.18",
     "@types/node": "^22.15.17",
     "json-schema-to-typescript": "^15.0.4",
     "tsup": "^8.5.0",

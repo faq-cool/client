@@ -78,16 +78,8 @@ export async function run({ script, options }: Params) {
     })
 
     const context = await browser.newContext({
+        storageState: 'auth.json',
         viewport,
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        colorScheme: 'light',
-        javaScriptEnabled: true,
-    })
-
-    await context.addInitScript(() => {
-        Object.defineProperty(navigator, 'webdriver', { get: () => false })
-        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] })
-        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] })
     })
 
     const { faq } = script
@@ -106,6 +98,10 @@ export async function run({ script, options }: Params) {
     await page.goto(`https://${faq.domain}${faq.path}`)
 
 
+    // await page.waitForTimeout(3000)
+    // await browser.close()
+
+    // process.exit(0)
 
     async function screenshot() {
         const buffer = await page.screenshot({
