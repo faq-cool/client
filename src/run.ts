@@ -78,8 +78,13 @@ export async function run({ script, options }: Params) {
     })
 
     const context = await browser.newContext({
-        storageState: 'auth.json',
         viewport,
+        storageState: 'auth.json',
+        userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+        extraHTTPHeaders: {
+            'Accept-Language': 'en-GB,en;q=0.9',
+            'sec-ch-ua': '"Not.A/Brand";v="99", "Chromium";v="136"'
+        }
     })
 
     const { faq } = script

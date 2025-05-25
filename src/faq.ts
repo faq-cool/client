@@ -15,13 +15,15 @@ program
     .description('FAQing cool FAQ generator')
     .version(version)
 
-program
+const cmdOpen = program
     .command('open')
     .description('Open a browser')
     .option('-a, --auth', 'Authentication json', 'auth.json')
+    .option('-u, --url <string>', 'URL to open')
+    .option('--headless', 'Run in headless mode', false)
     .action(async () => {
         console.log('Opening browser...')
-        await open()
+        await open(cmdOpen.opts())
     })
 
 program
