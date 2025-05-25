@@ -210,12 +210,38 @@ export async function run({ script, options }: Params) {
         // WAITING FOR LOCATORS AND SET POSITION TO RELATIVE
         await Promise.all(locators.map(async ({ locator }) => {
             await locator.waitFor({ state: 'attached' })
+            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
         }))
 
         // GETTING BOXES
         log('Getting scroll position')
-        const { sx, sy } = await page.evaluate(() => {
-            return { sx: window.scrollX, sy: window.scrollY }
+        const { sx, sy } = await page.evaluate((): Promise<{ sx: number, sy: number }> => {
+            return new Promise((resolve) => {
+                let lastX = window.scrollX
+                let lastY = window.scrollY
+                let stableFrames = 0
+
+                function check() {
+                    const currentX = window.scrollX
+                    const currentY = window.scrollY
+
+                    if (currentX === lastX && currentY === lastY) {
+                        stableFrames++
+                    } else {
+                        stableFrames = 0
+                        lastX = currentX
+                        lastY = currentY
+                    }
+
+                    if (stableFrames >= 3) {
+                        resolve({ sx: currentX, sy: currentY })
+                    } else {
+                        requestAnimationFrame(check)
+                    }
+                }
+
+                requestAnimationFrame(check)
+            })
         })
 
         // DOCUMENT SIZE
@@ -226,6 +252,7 @@ export async function run({ script, options }: Params) {
         })
 
         // SETTING VIEWPORT SIZE
+        log('Setting Viewport Size', width, height)
         await page.setViewportSize({ width, height })
 
         log('Scroll position', sx, sy)
