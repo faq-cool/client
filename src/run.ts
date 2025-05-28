@@ -1,3 +1,5 @@
+import isEqual from 'lodash/isEqual'
+
 import faq from '@faq.cool/types'
 import { chromium } from '@playwright/test'
 import { readFile } from 'fs/promises'
@@ -207,77 +209,64 @@ export async function run({ script, options }: Params) {
             locator: page.locator(name),
         }))
 
-        // WAITING FOR LOCATORS AND SET POSITION TO RELATIVE
+        // WAITING FOR LOCATORS
         await Promise.all(locators.map(async ({ locator }) => {
             await locator.waitFor({ state: 'attached' })
-            await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
         }))
 
-        // GETTING BOXES
-        log('Getting scroll position')
-        const { sx, sy } = await page.evaluate((): Promise<{ sx: number, sy: number }> => {
-            return new Promise((resolve) => {
-                let lastX = window.scrollX
-                let lastY = window.scrollY
-                let stableFrames = 0
-
-                function check() {
-                    const currentX = window.scrollX
-                    const currentY = window.scrollY
-
-                    if (currentX === lastX && currentY === lastY) {
-                        stableFrames++
-                    } else {
-                        stableFrames = 0
-                        lastX = currentX
-                        lastY = currentY
-                    }
-
-                    if (stableFrames >= 3) {
-                        resolve({ sx: currentX, sy: currentY })
-                    } else {
-                        requestAnimationFrame(check)
-                    }
-                }
-
-                requestAnimationFrame(check)
+        async function getDimensions() {
+            log('Getting Document Size')
+            const { width, height } = await page.evaluate(() => {
+                const { scrollWidth: width, scrollHeight: height } = document.documentElement
+                return { width, height }
             })
-        })
 
-        // DOCUMENT SIZE
-        log('Getting Document Size')
-        const { width, height } = await page.evaluate(async () => {
-            const { scrollWidth: width, scrollHeight: height } = document.documentElement
-            return { width, height }
-        })
+            log('Setting Viewport Size', width, height)
+            await page.setViewportSize({ width, height })
 
-        // SETTING VIEWPORT SIZE
-        log('Setting Viewport Size', width, height)
-        await page.setViewportSize({ width, height })
+            log('Getting scroll position')
+            const { sx, sy } = await page.evaluate(() => {
+                return { sx: window.scrollX, sy: window.scrollY }
+            })
 
-        log('Scroll position', sx, sy)
-        const boxes = await Promise.all(locators.map(async ({ name, locator }) => {
-            try {
-                log('Getting box for', name)
-                const bb = await locator.boundingBox()
-                if (bb === null) return
-                const box = {
-                    x: bb.x + sx,
-                    y: bb.y + sy,
-                    width: bb.width,
-                    height: bb.height,
+            const boxes = await Promise.all(locators.map(async ({ name, locator }): Promise<{ name: string, box: faq.Box } | undefined> => {
+                try {
+                    log('Getting box for', name)
+                    const bb = await locator.boundingBox()
+                    if (bb === null) return
+                    const box = {
+                        x: bb.x + sx,
+                        y: bb.y + sy,
+                        width: bb.width,
+                        height: bb.height,
+                    }
+                    return { name, box }
+                } catch {
+                    console.error('Error getting box for', name)
+                    process.exit(1)
                 }
-                return { name, box }
-            } catch {
-                console.error('Error getting box for', name)
-                process.exit(1)
+            }))
+
+            return { width, height, sx, sy, boxes }
+        }
+
+        async function getScreenshot() {
+            const { width, height, boxes } = await getDimensions()
+
+            log('Taking Screenshot')
+            const image = await screenshot()
+
+            const { width: w2, height: h2, boxes: box2 } = await getDimensions()
+            if (width == w2 && height == h2 && isEqual(boxes, box2)) {
+                return { image, width, height, boxes }
             }
-        }))
+
+            return await getScreenshot()
+        }
 
 
-        // TAKING SCREENSHOT
-        log('Taking Screenshot')
-        const image = await screenshot()
+        const { image, width, height, boxes } = await getScreenshot()
+
 
 
 
