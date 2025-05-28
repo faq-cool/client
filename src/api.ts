@@ -22,7 +22,7 @@ export namespace api {
 
         const res = await fetch(url.toString())
         const data = await res.json()
-        console.log('ls', data)
+        console.log(data)
     }
 }
 
