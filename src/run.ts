@@ -181,16 +181,16 @@ export async function run({ script, options }: Params) {
         await page.waitForLoadState('networkidle', { timeout: 10000 })
 
         // THIS IS A BIT AGGRESSIVE
-        await page.addStyleTag({
-            content: `
-              *::before, *::after {
-                content: none !important;
-                width: 0 !important;
-                height: 0 !important;
-                display: none !important;
-              }
-            `
-        })
+        // await page.addStyleTag({
+        //     content: `
+        //       *::before, *::after {
+        //         content: none !important;
+        //         width: 0 !important;
+        //         height: 0 !important;
+        //         display: none !important;
+        //       }
+        //     `
+        // })
 
         await page.addStyleTag({
             content: `
