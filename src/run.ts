@@ -179,6 +179,8 @@ export async function run({ script, options }: Params) {
     async function compile(scene: Scene): Promise<out.Scene> {
         log('Waiting for page to load')
         await page.waitForLoadState('networkidle', { timeout: 10000 })
+
+        // THIS IS A BIT AGGRESSIVE
         await page.addStyleTag({
             content: `
               *::before, *::after {
