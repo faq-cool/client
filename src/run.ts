@@ -217,8 +217,8 @@ export async function run({ script, options }: Params) {
 
             const { width, height } = page.viewportSize() || { width: 0, height: 0 }
             if (width != sw || height != sh) {
-                log('Setting Viewport Size', width, height)
-                await page.setViewportSize({ width, height })
+                log('Setting Viewport Size', sw, sh)
+                await page.setViewportSize({ width: sw, height: sh })
             }
 
             log('Getting scroll position')
