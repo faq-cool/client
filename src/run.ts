@@ -1,7 +1,7 @@
-import isEqual from 'lodash/isEqual'
 
 import faq from '@faq.cool/types'
 import { chromium } from '@playwright/test'
+import assert from 'assert'
 import { readFile } from 'fs/promises'
 import sharp from 'sharp'
 import yaml from 'yaml'
@@ -172,18 +172,34 @@ export async function run({ script, options }: Params) {
         }
     }
 
+    function waitForAnimationFrame() {
+        return page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
+    }
+
     async function compile(scene: Scene): Promise<out.Scene> {
         log('Waiting for page to load')
         await page.waitForLoadState('networkidle', { timeout: 10000 })
         await page.addStyleTag({
             content: `
-              *, *::before, *::after {
-                transition: none !important;
+              *::before, *::after {
+                content: none !important;
+                width: 0 !important;
+                height: 0 !important;
+                display: none !important;
               }
             `
         })
 
-        // GET ALL SELECTORS
+        await page.addStyleTag({
+            content: `
+              *, *::before, *::after {
+                transition: none !important;
+                animation: none !important;
+              }
+            `
+        })
+
+        // GET SELECTORS THAT MUST BE VISIBLE
         const keys = (keyVals: KeyVals) => keyVals.map((o) => Object.keys(o)).flat()
         const selectors = scene.map(step => visit<string | string[]>(step, {
             say: () => [],
@@ -193,7 +209,7 @@ export async function run({ script, options }: Params) {
             fill: keys,
             mask: keys,
             select: keys,
-            file: keys,
+            file: () => [],
         })).flat()
 
         log('Selectors', selectors)
@@ -205,7 +221,7 @@ export async function run({ script, options }: Params) {
 
         // WAITING FOR LOCATORS
         await Promise.all(locators.map(async ({ locator }) => {
-            await locator.waitFor({ state: 'attached' })
+            await locator.waitFor({ state: 'visible' })
         }))
 
         async function getDimensions() {
@@ -219,6 +235,7 @@ export async function run({ script, options }: Params) {
             if (width != sw || height != sh) {
                 log('Setting Viewport Size', sw, sh)
                 await page.setViewportSize({ width: sw, height: sh })
+                await waitForAnimationFrame()
             }
 
             log('Getting scroll position')
@@ -226,17 +243,13 @@ export async function run({ script, options }: Params) {
                 return { sx: window.scrollX, sy: window.scrollY }
             })
 
+            assert(sx == 0 && sy == 0, 'Scroll position should be 0,0')
+
             const boxes = await Promise.all(locators.map(async ({ name, locator }): Promise<{ name: string, box: faq.Box } | undefined> => {
                 try {
                     log('Getting box for', name)
-                    const bb = await locator.boundingBox()
-                    if (bb === null) return
-                    const box = {
-                        x: bb.x + sx,
-                        y: bb.y + sy,
-                        width: bb.width,
-                        height: bb.height,
-                    }
+                    const box = await locator.boundingBox()
+                    if (box === null) return
                     return { name, box }
                 } catch {
                     console.error('Error getting box for', name)
@@ -244,7 +257,7 @@ export async function run({ script, options }: Params) {
                 }
             }))
 
-            return { sw, sh, sx, sy, boxes }
+            return { sw, sh, boxes }
         }
 
         async function getScreenshot() {
@@ -253,22 +266,22 @@ export async function run({ script, options }: Params) {
             log('Taking Screenshot')
             const image = await screenshot()
 
-            const { sw: sw2, sh: sh2, boxes: boxes2 } = await getDimensions()
-            if (sw != sw2) {
-                log('width mismatch', sw, sw2)
-                return await getScreenshot()
-            }
+            // const { sw: sw2, sh: sh2, boxes: boxes2 } = await getDimensions()
+            // if (sw != sw2) {
+            //     log('width mismatch', sw, sw2)
+            //     return await getScreenshot()
+            // }
 
-            if (sh != sh2) {
-                log('height mismatch', sh, sh2)
-                return await getScreenshot()
-            }
+            // if (sh != sh2) {
+            //     log('height mismatch', sh, sh2)
+            //     return await getScreenshot()
+            // }
 
 
-            if (!isEqual(boxes, boxes2)) {
-                log('boxes mismatch', boxes, boxes2)
-                return await getScreenshot()
-            }
+            // if (!isEqual(boxes, boxes2)) {
+            //     log('boxes mismatch', boxes, boxes2)
+            //     return await getScreenshot()
+            // }
 
             return { image, sw, sh, boxes }
         }
@@ -277,6 +290,9 @@ export async function run({ script, options }: Params) {
         const { image, sw, sh, boxes } = await getScreenshot()
 
 
+        // EXECUTING
+        log('Executing')
+        await execute(scene)
 
 
         // STEPS
@@ -307,10 +323,6 @@ export async function run({ script, options }: Params) {
         }
 
         const steps: out.Step[] = scene.map(step => visit<out.Step | out.Step[]>(step, stepVisitor)).flat()
-
-        // EXECUTING
-        log('Executing')
-        await execute(scene)
 
         log('Emitting')
         const names = Object
