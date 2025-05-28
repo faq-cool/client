@@ -1,9 +1,11 @@
 import faq from "@faq.cool/types"
 
-const API = 'http://localhost:3000/api'
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://faq.cool/api'
 const SAVE = `${API}/save`
 
 export namespace api {
+    const token = process.env.FAQ_TOKEN as string
+
     export async function save(faq: faq.Faq) {
         const res = await fetch(SAVE, {
             method: 'POST',
@@ -12,6 +14,15 @@ export namespace api {
         })
 
         return await res.json()
+    }
+
+    export async function ls() {
+        const url = new URL(`${API}/ls`)
+        url.searchParams.set('token', token)
+
+        const res = await fetch(url.toString())
+        const data = await res.json()
+        console.log('ls', data)
     }
 }
 

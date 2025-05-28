@@ -15,6 +15,13 @@ program
     .description('FAQing cool FAQ generator')
     .version(version)
 
+const cmdLs = program
+    .command('ls')
+    .description('List My faqs')
+    .action(() => {
+        api.ls()
+    })
+
 const cmdOpen = program
     .command('open')
     .description('Open a browser')
