@@ -104,12 +104,6 @@ export async function run({ script, options }: Params) {
     const page = await context.newPage()
     await page.goto(`https://${faq.domain}${faq.path}`)
 
-
-    // await page.waitForTimeout(3000)
-    // await browser.close()
-
-    // process.exit(0)
-
     async function screenshot() {
         const buffer = await page.screenshot({
             type: 'png',
@@ -216,13 +210,16 @@ export async function run({ script, options }: Params) {
 
         async function getDimensions() {
             log('Getting Document Size')
-            const { width, height } = await page.evaluate(() => {
-                const { scrollWidth: width, scrollHeight: height } = document.documentElement
-                return { width, height }
+            const { sw, sh } = await page.evaluate(() => {
+                const { scrollWidth: sw, scrollHeight: sh } = document.documentElement
+                return { sw, sh }
             })
 
-            log('Setting Viewport Size', width, height)
-            await page.setViewportSize({ width, height })
+            const { width, height } = page.viewportSize() || { width: 0, height: 0 }
+            if (width != sw || height != sh) {
+                log('Setting Viewport Size', width, height)
+                await page.setViewportSize({ width, height })
+            }
 
             log('Getting scroll position')
             const { sx, sy } = await page.evaluate(() => {
@@ -247,25 +244,37 @@ export async function run({ script, options }: Params) {
                 }
             }))
 
-            return { width, height, sx, sy, boxes }
+            return { sw, sh, sx, sy, boxes }
         }
 
         async function getScreenshot() {
-            const { width, height, boxes } = await getDimensions()
+            const { sw, sh, boxes } = await getDimensions()
 
             log('Taking Screenshot')
             const image = await screenshot()
 
-            const { width: w2, height: h2, boxes: box2 } = await getDimensions()
-            if (width == w2 && height == h2 && isEqual(boxes, box2)) {
-                return { image, width, height, boxes }
+            const { sw: sw2, sh: sh2, boxes: boxes2 } = await getDimensions()
+            if (sw != sw2) {
+                log('width mismatch', sw, sw2)
+                return await getScreenshot()
             }
 
-            return await getScreenshot()
+            if (sh != sh2) {
+                log('height mismatch', sh, sh2)
+                return await getScreenshot()
+            }
+
+
+            if (!isEqual(boxes, boxes2)) {
+                log('boxes mismatch', boxes, boxes2)
+                return await getScreenshot()
+            }
+
+            return { image, sw, sh, boxes }
         }
 
 
-        const { image, width, height, boxes } = await getScreenshot()
+        const { image, sw, sh, boxes } = await getScreenshot()
 
 
 
@@ -310,7 +319,7 @@ export async function run({ script, options }: Params) {
                     .filter(e => e !== undefined)
                     .map(({ name, box }) => [name, box]))
 
-        return { image, width, height, names, steps }
+        return { image, width: sw, height: sh, names, steps }
     }
 
     const scenes: out.Scene[] = []
