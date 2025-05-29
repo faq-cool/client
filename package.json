@@ -1,7 +1,7 @@
 {
   "name": "@faq.cool/client",
   "description": "A FAQing Cool FAQ Generator",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "author": "Gilad Kutiel",
   "license": "ISC",
   "type": "module",
