@@ -69,14 +69,4 @@ const cmdRun = program.command('it <path.yml>')
     .action(() => it(cmdRun.args[0], cmdRun.opts()))
 
 
-program
-    .command('completion')
-    .argument('env', 'Environment to generate completion for')
-    .description('Generate shell completion script')
-    .action(async () => {
-        console.log('Generating shell completion script...', env)
-        tabtab.log(program.commands.map(cmd => cmd.name))
-    })
-
-
 program.parse()

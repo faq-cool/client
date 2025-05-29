@@ -25,6 +25,7 @@
     "yaml": "^2.8.0"
   },
   "bin": {
-    "faq": "dist/faq.js"
+    "faq": "dist/faq.js",
+    "faqc": "dist/faqc.js"
   }
 }
