@@ -1,7 +1,10 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-    entry: ['src/faq.ts'],
+    entry: [
+        'src/faq.ts',
+        'src/faqc.ts',
+    ],
     format: ['esm', 'cjs'],
     target: 'node20',
     outDir: 'dist',
