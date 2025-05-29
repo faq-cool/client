@@ -6,7 +6,7 @@ dist
 
 *.bu
 *.webm
-.env.local
+.env*
 steps.json
 tmp.yaml
 faq.json

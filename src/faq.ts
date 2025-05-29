@@ -1,6 +1,9 @@
 import { Command } from 'commander'
 import { config } from 'dotenv'
 import { writeFile } from 'fs/promises'
+import http, { IncomingMessage, ServerResponse } from 'http'
+import o from 'open'
+import { URL } from 'url'
 import { version } from '../package.json'
 import { api } from './api'
 import { auth } from './auth'
@@ -10,12 +13,48 @@ import { FAQ } from './schema'
 
 const program = new Command()
 
+function env() {
+    config({ path: '.env' })
+    config({ path: '.env.faq' })
+    config({ path: '.env.local' })
+
+    return process.env
+}
+
 program
     .name('faq')
     .description('FAQing cool FAQ generator')
     .version(version)
 
-const cmdLs = program
+program
+    .command('login')
+    .description('Login to faq.cool')
+    .action(async () => {
+        await o('https://faq.cool/login')
+        const server = http.createServer(async (req: IncomingMessage, res: ServerResponse) => {
+            const reqUrl = new URL(req.url!, `http://${req.headers.host}`)
+            const token = reqUrl.searchParams.get('token')
+
+            await writeFile('.env.faq', `TOKEN=${token}`)
+
+            res.writeHead(200, { 'Content-Type': 'text/plain' })
+            res.end('You are now signed in! Token was saved to .env.faq. You can close me now.')
+            server.close(() => { })
+        })
+
+        server.listen(8979, () => {
+            console.log('Listening on http://localhost:8979')
+        })
+
+    })
+
+program
+    .command('env')
+    .action(() => {
+        console.log(env())
+    })
+
+program
     .command('ls')
     .description('List My faqs')
     .action(() => {
@@ -50,6 +89,9 @@ const cmdRun = program.command('run <path.yml>')
     .option('-i, --id <number>', 'Update existing faq id', Number)
     .action(async (yaml) => {
         config({ path: '.env' })
+        config({ path: '.env.faq' })
+        config({ path: '.env.local' })
+
         const token = process.env.TOKEN as string
         console.log('Token', token)
         if (!token) {
