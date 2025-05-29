@@ -2,10 +2,15 @@ import { chromium } from "@playwright/test"
 
 interface Props {
     headless?: boolean
+    recordHar?: boolean
     storageState?: string
 }
 
-export async function newContext({ headless = true, storageState }: Props = {}) {
+export async function newContext({
+    headless = true,
+    recordHar = false,
+    storageState }: Props = {}) {
+
     const browser = await chromium.launch({
         headless,
         args: [
@@ -25,11 +30,11 @@ export async function newContext({ headless = true, storageState }: Props = {}) 
 
     const options = {
         ...(storageState ? { storageState } : {}),
+        ...(recordHar ? { recordHar: { path: 'har.json' } } : {}),
     }
 
     const context = await browser.newContext({
         ...options,
-        recordHar: { path: 'har.json' },
         userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
         extraHTTPHeaders: {
             'Accept-Language': 'en-GB,en;q=0.9',
