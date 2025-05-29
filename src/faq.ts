@@ -75,7 +75,7 @@ program
     .description('Generate shell completion script')
     .action(async () => {
         console.log('Generating shell completion script...', env)
-        tabtab.log(['baba', 'lala', 'foo', 'bar'])
+        tabtab.log(program.commands.map(cmd => cmd.name))
     })
 
 
