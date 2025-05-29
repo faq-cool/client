@@ -1,9 +1,12 @@
 import { writeFile } from 'fs/promises'
 import http, { IncomingMessage, ServerResponse } from 'http'
+import open from 'open'
 import { URL } from 'url'
+
 export async function login() {
     const url = 'https://faq.cool/login'
-    await require(' open')(url)
+    await open(url)
+
     const server = http.createServer(async (req: IncomingMessage, res: ServerResponse) => {
         const reqUrl = new URL(req.url!, `http://${req.headers.host}`)
         const token = reqUrl.searchParams.get('token')
