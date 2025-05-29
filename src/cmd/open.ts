@@ -6,7 +6,10 @@ interface Open {
 }
 
 export async function open({ url, authJson }: Open) {
-    const { browser, context } = await newContext()
+    const { browser, context } = await newContext({
+        headless: false,
+    })
+
     const page = await context.newPage()
     if (url) await page.goto(url)
 

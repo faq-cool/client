@@ -54,7 +54,7 @@ export const cmdIt = program.command('it <path.yml>')
 function complete() {
     const env = tabtab.parseEnv(process.env)
     const cmds = program.commands
-    tabtab.log(cmds.map(cmd => `${cmd.name()}\t${cmd.description()}`))
+    // tabtab.log(cmds.map(cmd => `${cmd.name()}\t${cmd.description()}`))
 }
 
 complete()
