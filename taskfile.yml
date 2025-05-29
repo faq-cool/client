@@ -13,6 +13,14 @@ tasks:
       - tsup
     silent: true
 
+  link:
+    desc: Link the package globally
+    cmds:
+      - npm link
+    deps:
+      - patch
+      - build
+
   publish:
     desc: Publish the package to npm
     cmds:

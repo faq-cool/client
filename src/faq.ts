@@ -1,4 +1,5 @@
 import { Command } from 'commander'
+import tabtab from 'tabtab'
 import { version } from '../package.json'
 import { api } from './api/api'
 import { auth } from './cmd/auth'
@@ -13,6 +14,17 @@ program
     .name('faq')
     .description('FAQing cool FAQ generator')
     .version(version)
+
+// INIT
+program
+    .command('init')
+    .description('Install Shell Autocomplete')
+    .action(async () => {
+        await tabtab.install({
+            name: 'faq',
+            completer: 'faq'
+        })
+    })
 
 // LOGIN
 program
@@ -55,5 +67,14 @@ const cmdRun = program.command('it <path.yml>')
     .option('-d, --dry', 'Run in dry run mode')
     .option('-i, --id <number>', 'Update existing faq id', Number)
     .action(() => it(cmdRun.args[0], cmdRun.opts()))
+
+
+program
+    .command('completion')
+    .description('Generate shell completion script')
+    .action(async () => {
+        tabtab.log(['baba', 'lala', 'foo', 'bar'])
+    })
+
 
 program.parse()
