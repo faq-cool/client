@@ -1,72 +1,26 @@
-import { Command } from 'commander'
+import { login } from './cmd/login'
+import { open } from './cmd/open'
+
 import tabtab from 'tabtab'
-import { version } from '../package.json'
 import { api } from './api/api'
 import { auth } from './cmd/auth'
 import { it } from './cmd/it'
-import { login } from './cmd/login'
-import { open } from './cmd/open'
+import { cmdAuth, cmdEnv, cmdInit, cmdIt, cmdLogin, cmdLs, cmdOpen, program } from "./faqc"
 import { env } from './lib/util'
 
-const program = new Command()
-
-program
-    .name('faq')
-    .description('FAQing cool FAQ generator')
-    .version(version)
-
-// INIT
-program
-    .command('init')
-    .description('Install Shell Autocomplete')
-    .action(async () => {
-        await tabtab.install({
-            name: 'faq',
-            completer: 'faq'
-        })
+cmdInit.action(async () => {
+    await tabtab.install({
+        name: 'faq',
+        completer: 'faqc'
     })
+})
 
-// LOGIN
-program
-    .command('login')
-    .description('Login to faq.cool')
-    .action(login)
-
-// ENV
-program
-    .command('env')
-    .action(() => console.log(env()))
-
-// LS
-program
-    .command('ls')
-    .description('List My faqs')
-    .action(api.ls)
-
-// OPEN
-const cmdOpen = program
-    .command('open')
-    .description('Open a browser')
-    .option('-a, --auth', 'Authentication json', 'auth.json')
-    .option('-u, --url <string>', 'URL to open')
-    .option('--headless', 'Run in headless mode', false)
-    .action(async () => await open(cmdOpen.opts()))
-
-// AUTH
-program
-    .command('auth')
-    .description('Authenticate and save')
-    .action(async () => await auth())
-
-// IT
-const cmdRun = program.command('it <path.yml>')
-    .description('Generating faq from yaml')
-    .option('-w, --width <number>', 'Viewport width', Number, 1280)
-    .option('-h, --height <number>', 'Viewport height', Number, 720)
-    .option('--headed', 'Run in headed mode')
-    .option('-d, --dry', 'Run in dry run mode')
-    .option('-i, --id <number>', 'Update existing faq id', Number)
-    .action(() => it(cmdRun.args[0], cmdRun.opts()))
+cmdLogin.action(login)
+cmdEnv.action(() => console.log(env()))
+cmdLs.action(api.ls)
+cmdOpen.action(async () => await open(cmdOpen.opts()))
+cmdAuth.action(async () => await auth())
+cmdIt.action(() => it(cmdIt.args[0], cmdIt.opts()))
 
 
 program.parse()
