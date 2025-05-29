@@ -5,7 +5,7 @@
   "author": "Gilad Kutiel",
   "license": "ISC",
   "devDependencies": {
-    "@faq.cool/types": "^0.0.18",
+    "@faq.cool/types": "^0.0.19",
     "@types/node": "^22.15.17",
     "json-schema-to-typescript": "^15.0.4",
     "tsup": "^8.5.0",

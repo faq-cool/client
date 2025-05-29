@@ -1,140 +1,59 @@
 import { Command } from 'commander'
-import { config } from 'dotenv'
-import { writeFile } from 'fs/promises'
-import http, { IncomingMessage, ServerResponse } from 'http'
-import o from 'open'
-import { URL } from 'url'
 import { version } from '../package.json'
-import { api } from './api'
-import { auth } from './auth'
-import { open } from './open'
-import { load, run } from './run'
-import { FAQ } from './schema'
+import { api } from './api/api'
+import { auth } from './cmd/auth'
+import { it } from './cmd/it'
+import { login } from './cmd/login'
+import { open } from './cmd/open'
+import { env } from './lib/util'
 
 const program = new Command()
-
-function env() {
-    config({ path: '.env' })
-    config({ path: '.env.faq' })
-    config({ path: '.env.local' })
-
-    return process.env
-}
 
 program
     .name('faq')
     .description('FAQing cool FAQ generator')
     .version(version)
 
+// LOGIN
 program
     .command('login')
     .description('Login to faq.cool')
-    .action(async () => {
-        await o('https://faq.cool/login')
-        const server = http.createServer(async (req: IncomingMessage, res: ServerResponse) => {
-            const reqUrl = new URL(req.url!, `http://${req.headers.host}`)
-            const token = reqUrl.searchParams.get('token')
+    .action(login)
 
-            await writeFile('.env.faq', `TOKEN=${token}`)
-
-            res.writeHead(200, { 'Content-Type': 'text/plain' })
-            res.end('You are now signed in! Token was saved to .env.faq. You can close me now.')
-            server.close(() => { })
-        })
-
-        server.listen(8979, () => {
-            console.log('Listening on http://localhost:8979')
-        })
-
-    })
-
+// ENV
 program
     .command('env')
-    .action(() => {
-        console.log(env())
-    })
+    .action(() => console.log(env()))
 
+// LS
 program
     .command('ls')
     .description('List My faqs')
-    .action(() => {
-        api.ls()
-    })
+    .action(api.ls)
 
+// OPEN
 const cmdOpen = program
     .command('open')
     .description('Open a browser')
     .option('-a, --auth', 'Authentication json', 'auth.json')
     .option('-u, --url <string>', 'URL to open')
     .option('--headless', 'Run in headless mode', false)
-    .action(async () => {
-        console.log('Opening browser...')
-        await open(cmdOpen.opts())
-    })
+    .action(async () => await open(cmdOpen.opts()))
 
+// AUTH
 program
     .command('auth')
     .description('Authenticate and save')
-    .action(async () => {
-        console.log('Authenticating')
-        await auth()
-    })
+    .action(async () => await auth())
 
-const cmdRun = program.command('run <path.yml>')
+// IT
+const cmdRun = program.command('it <path.yml>')
     .description('Generating faq from yaml')
     .option('-w, --width <number>', 'Viewport width', Number, 1280)
     .option('-h, --height <number>', 'Viewport height', Number, 720)
     .option('--headed', 'Run in headed mode')
     .option('-d, --dry', 'Run in dry run mode')
     .option('-i, --id <number>', 'Update existing faq id', Number)
-    .action(async (yaml) => {
-        config({ path: '.env' })
-        config({ path: '.env.faq' })
-        config({ path: '.env.local' })
-
-        const token = process.env.TOKEN as string
-        console.log('Token', token)
-        if (!token) {
-            console.error('Please set the TOKEN environment variable')
-            process.exit(1)
-        }
-
-        console.log('Generating faq from', yaml)
-
-        const script = await load(yaml) as FAQ
-        const { width, height, headed, dry, id } = cmdRun.opts()
-
-        const faq = await run({
-            script, options: {
-                width,
-                height,
-                headless: !headed,
-            }
-        })
-
-        console.log('Saving to faq.json for debugging')
-
-        await writeFile(
-            'faq.json',
-            JSON.stringify(
-                faq, (k, v) => k == 'image' ? '' : v, 2))
-
-
-        if (!dry) {
-            console.log('Saving to faq.cool')
-            const res = await api.save({
-                token,
-                viewport: {
-                    width,
-                    height,
-                },
-                ...faq,
-                ...(id ? { faq_id: id } : {})
-            })
-
-            console.log('Saved to faq.cool', res)
-        }
-
-    })
+    .action(() => it(cmdRun.args[0], cmdRun.opts()))
 
 program.parse()
