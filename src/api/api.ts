@@ -2,11 +2,11 @@ import faq from "@faq.cool/types"
 import assert from "assert"
 import { env } from "../lib/util"
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://faq.cool/api'
-const SAVE = `${API}/save`
 
 export namespace api {
-    const { FAQ_TOKEN } = env()
+    const { FAQ_TOKEN, FAQ_API_URL } = env()
+    const API = FAQ_API_URL || 'https://faq.cool/api'
+    const SAVE = `${API}/save`
 
     export async function save(faq: faq.Faq) {
         const res = await fetch(SAVE, {
