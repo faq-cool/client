@@ -4,6 +4,7 @@
   "version": "0.0.7",
   "author": "Gilad Kutiel",
   "license": "ISC",
+  "type": "module",
   "devDependencies": {
     "@faq.cool/types": "^0.0.19",
     "@types/node": "^22.15.17",
