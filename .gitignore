@@ -13,3 +13,4 @@ faq.json
 .env
 auth.json
 do.yml
+*.log
