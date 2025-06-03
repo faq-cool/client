@@ -1,4 +1,4 @@
-# FAQing cool FAQ generator
+# A FAQing cool FAQ generator
 ## Tested, Up-to-Date, Automated, Visual documentation
 faq.cool is a tool to generate and maintain your documentation in a simple, yet powerful way.
 

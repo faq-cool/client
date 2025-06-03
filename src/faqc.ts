@@ -90,7 +90,7 @@ export function readme() {
         .join('\n')
 
     function* lines() {
-        yield '# FAQing cool FAQ generator'
+        yield '# A FAQing cool FAQ generator'
         yield '## Tested, Up-to-Date, Automated, Visual documentation'
         yield 'faq.cool is a tool to generate and maintain your documentation in a simple, yet powerful way.'
 
