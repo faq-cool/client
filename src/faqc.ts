@@ -92,7 +92,8 @@ export function readme() {
     function* lines() {
         yield '# A FAQing cool FAQ generator'
         yield '## Tested, Up-to-Date, Automated, Visual documentation'
-        yield 'faq.cool is a tool to generate and maintain your documentation in a simple, yet powerful way.'
+
+        yield '[faq.cool](https://faq.cool) is a tool to generate and maintain your documentation in a simple, yet powerful way.'
 
         yield ''
         yield '## Example'
@@ -109,7 +110,7 @@ export function readme() {
         yield '```'
 
         yield ''
-        yield 'A ten seconds later...'
+        yield 'A few seconds later...'
         yield ''
         yield '[https://faq.cool/faq/1](https://faq.cool/faq/1)'
 

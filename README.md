@@ -1,6 +1,6 @@
 # A FAQing cool FAQ generator
 ## Tested, Up-to-Date, Automated, Visual documentation
-faq.cool is a tool to generate and maintain your documentation in a simple, yet powerful way.
+[faq.cool](https://faq.cool) is a tool to generate and maintain your documentation in a simple, yet powerful way.
 
 ## Example
 Create a `demo.yml` with the following:
@@ -37,6 +37,6 @@ Run:
 faq it demo.yml
 ```
 
-A ten seconds later...
+A few seconds later...
 
 [https://faq.cool/faq/1](https://faq.cool/faq/1)
