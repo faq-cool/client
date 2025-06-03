@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { homedir } from 'os'
 import { version } from '../package.json'
 
@@ -53,7 +53,7 @@ export const cmdIt = program
     .option('--headed', 'Run in headed mode')
     .option('-d, --dry', 'Run in dry run mode')
 
-export default function init() {
+export function init() {
     const outFolder = `${homedir()}/.config/fish/completions`
     if (!existsSync(outFolder)) return
 
@@ -69,8 +69,8 @@ export default function init() {
             yield comp
 
             for (const o of c.options) {
-                const s = o.short ? `-s ${o.short}` : ''
-                const l = o.long ? `-l ${o.long}` : ''
+                const s = o.short ? `-s ${o.short.slice(1)}` : ''
+                const l = o.long ? `-l ${o.long.slice(2)}` : ''
                 const flag = `complete -c faq -n "__fish_seen_subcommand_from ${name}" -f ${s} ${l} -d "${o.description}"`
 
                 yield flag
@@ -82,3 +82,41 @@ export default function init() {
     writeFileSync(outFile, [...completions()].join('\n'))
     console.log(`Fish completions written to ${outFile}`)
 }
+
+export function readme() {
+    const demo = readFileSync('demo.yml', 'utf-8')
+        .split('\n')
+        .slice(1)
+        .join('\n')
+
+    function* lines() {
+        yield '# FAQing cool FAQ generator'
+        yield '## Tested, Up-to-Date, Automated, Visual documentation'
+        yield 'faq.cool is a tool to generate and maintain your documentation in a simple, yet powerful way.'
+
+        yield ''
+        yield '## Example'
+        yield 'Create a `demo.yml` with the following:'
+        yield '```yaml'
+        yield demo
+        yield '```'
+
+
+        yield ''
+        yield 'Run:'
+        yield '```bash'
+        yield 'faq it demo.yml'
+        yield '```'
+
+        yield ''
+        yield 'A ten seconds later...'
+        yield '[https://faq.cool/faq/1](https://faq.cool/faq/1)'
+
+    }
+
+    const content = [...lines()].join('\n')
+    console.log(content)
+    writeFileSync('README.md', content)
+}
+
+readme()

@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=/home/gilad/Work/faq.cool/client/faq.schema.json
 faq:
+  version: 0
   voice: en-US-Chirp-HD-F
-  domain: www.saucedemo.com
-  path: /
 
-  scenes:
+  script:
     - - say: Go to saucedemo dot com and enter your username and password
+      - goto: https://www.saucedemo.com/
       - fill:
           - "#user-name": standard_user
       - mask:
@@ -21,5 +21,5 @@ faq:
     - - say: And add it to your cart
       - click: "#add-to-cart"
 
-    - - say: "The item was added to your cart"
+    - - say: "Make sure that the item was added to your cart"
       - highlight: "#shopping_cart_container"

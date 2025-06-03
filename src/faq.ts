@@ -4,7 +4,7 @@ import { open } from './cmd/open'
 import { api } from './api/api'
 import { auth } from './cmd/auth'
 import { it } from './cmd/it'
-import init, { cmdAuth, cmdEnv, cmdInit, cmdIt, cmdLogin, cmdLs, cmdOpen, program } from "./faqc"
+import { cmdAuth, cmdEnv, cmdInit, cmdIt, cmdLogin, cmdLs, cmdOpen, init, program } from "./faqc"
 import { env } from './lib/util'
 
 cmdInit.action(init)

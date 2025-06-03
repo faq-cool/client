@@ -7,15 +7,11 @@
         "faq": {
             "type": "object",
             "properties": {
+                "version": {
+                    "type": "number"
+                },
                 "voice": {
                     "$ref": "voice.schema.json#/$defs/Voice"
-                },
-                "domain": {
-                    "type": "string",
-                    "format": "uri-reference"
-                },
-                "path": {
-                    "type": "string"
                 },
                 "cookies": {
                     "type": "object",
@@ -23,7 +19,7 @@
                         "type": "string"
                     }
                 },
-                "scenes": {
+                "script": {
                     "type": "array",
                     "items": {
                         "$ref": "#/$defs/Scene"
@@ -31,10 +27,9 @@
                 }
             },
             "required": [
+                "version",
                 "voice",
-                "domain",
-                "path",
-                "scenes"
+                "script"
             ],
             "additionalProperties": false
         }
@@ -43,6 +38,18 @@
         "faq"
     ],
     "$defs": {
+        "Goto": {
+            "type": "object",
+            "properties": {
+                "goto": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "goto"
+            ],
+            "additionalProperties": false
+        },
         "Say": {
             "type": "object",
             "properties": {
@@ -143,6 +150,9 @@
         },
         "Step": {
             "oneOf": [
+                {
+                    "$ref": "#/$defs/Goto"
+                },
                 {
                     "$ref": "#/$defs/Say"
                 },
