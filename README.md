@@ -38,4 +38,5 @@ faq it demo.yml
 ```
 
 A ten seconds later...
+
 [https://faq.cool/faq/1](https://faq.cool/faq/1)

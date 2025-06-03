@@ -110,6 +110,7 @@ export function readme() {
 
         yield ''
         yield 'A ten seconds later...'
+        yield ''
         yield '[https://faq.cool/faq/1](https://faq.cool/faq/1)'
 
     }
