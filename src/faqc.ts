@@ -58,6 +58,7 @@ export default function init() {
     if (!existsSync(outFolder)) return
 
     function* completions() {
+        yield 'complete -c faq -e'
         for (const c of program.commands) {
             const name = c.name()
             const description = c.description()
@@ -68,8 +69,8 @@ export default function init() {
             yield comp
 
             for (const o of c.options) {
-                const s = o.short ? `-s ${o.short}, ` : ''
-                const l = o.long ? `-l ${o.long}, ` : ''
+                const s = o.short ? `-s ${o.short}` : ''
+                const l = o.long ? `-l ${o.long}` : ''
                 const flag = `complete -c faq -n "__fish_seen_subcommand_from ${name}" -f ${s} ${l} -d "${o.description}"`
 
                 yield flag
@@ -81,5 +82,3 @@ export default function init() {
     writeFileSync(outFile, [...completions()].join('\n'))
     console.log(`Fish completions written to ${outFile}`)
 }
-
-init()
